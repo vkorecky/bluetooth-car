@@ -1,2 +1,2 @@
 # bluetooth-car
-Arduino C++ project form my bluetooth car
+C++ project for my Arduino Bluetooth Robot Car Kit (Works with Official Arduino Boards)
