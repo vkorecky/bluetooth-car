@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.paint.Color?>
+<?scenebuilder-classpath-element ../../../../../../../target/visualreg-designer.jar?>
+
+<fx:root prefHeight="515.0" prefWidth="742.0" type="javafx.scene.layout.BorderPane" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1">
+  <bottom>
+    <FlowPane alignment="CENTER_LEFT" minHeight="32.0" prefHeight="32.0" prefWidth="884.0" styleClass="pnHeader">
+      <children>
+        <ProgressBar fx:id="progressBar" prefWidth="237.0" progress="1.0" />
+        <Label fx:id="lblStatus" styleClass="txtWhite" text="">
+          <FlowPane.margin>
+            <Insets left="20.0" />
+          </FlowPane.margin>
+        </Label>
+      </children>
+      <padding>
+        <Insets bottom="10.0" left="12.0" right="10.0" top="10.0" />
+      </padding>
+      <BorderPane.margin>
+        <Insets fx:id="x2" />
+      </BorderPane.margin>
+    </FlowPane>
+  </bottom>
+  <center>
+    <BorderPane fx:id="mainPane" prefHeight="200.0" prefWidth="200.0" />
+  </center>
+  <left>
+    <VBox prefHeight="411.0" prefWidth="261.0" styleClass="pnMenu">
+      <padding>
+        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+      </padding>
+    </VBox>
+  </left>
+  <stylesheets>
+    <URL value="@../css/theme.css" />
+  </stylesheets>
+  <top>
+    <GridPane prefHeight="74.00009999999747" prefWidth="742.0" styleClass="pnHeader">
+      <children>
+        <Pane id="" prefHeight="75.0" prefWidth="531.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
+          <children>
+            <Label id="lblAppName" layoutX="78.0" layoutY="15.0" prefHeight="47.0" prefWidth="264.0" text="Bluetooth CAR">
+              <textFill>
+                <Color blue="0.250" green="0.250" red="0.250" fx:id="x1" />
+              </textFill>
+            </Label>
+            <Label id="lblApp" layoutX="340.0" layoutY="20.0" text="| CONTROLLER" textFill="$x1" />
+            <ImageView fitHeight="48.0" fitWidth="48.0" layoutX="14.0" layoutY="13.0" pickOnBounds="true" preserveRatio="true">
+              <image>
+                <Image url="@../images/icons_64x64/logo.png" />
+              </image>
+            </ImageView>
+          </children>
+        </Pane>
+      </children>
+      <columnConstraints>
+        <ColumnConstraints hgrow="SOMETIMES" minWidth="-1.0" prefWidth="-1.0" />
+        <ColumnConstraints fillWidth="false" halignment="RIGHT" hgrow="SOMETIMES" maxWidth="100.0" minWidth="100.0" prefWidth="100.0" />
+      </columnConstraints>
+      <rowConstraints>
+        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+      </rowConstraints>
+    </GridPane>
+  </top>
+</fx:root>
