@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
  */
 public class App extends Application {
 
-    private static final Logger logger = LoggerFactory.getLogger(App.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
 
     /**
      * The main() method is ignored in correctly deployed JavaFX application.
@@ -50,7 +50,7 @@ public class App extends Application {
         Scene scene = new Scene(mainPane);
         stage.setScene(scene);
         Screen screen = Screen.getPrimary();
-        logger.info("Current system DPI is " + screen.getDpi());
+        LOGGER.info("Current system DPI is " + screen.getDpi());
         Rectangle2D bounds = screen.getVisualBounds();
 
         stage.setMaximized(true);

@@ -13,6 +13,7 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javax.bluetooth.BluetoothStateException;
+import org.korecky.bluetooth.car.controller.Configuration;
 import org.korecky.bluetooth.car.controller.fxml.dialogs.SelectBluetoothDeviceDialog;
 import org.korecky.bluetooth.client.hc06.BluetoothScanThread;
 import org.korecky.bluetooth.client.hc06.entity.RFCommBluetoothDevice;
@@ -29,19 +30,20 @@ import org.slf4j.LoggerFactory;
 public class Main extends BorderPane {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+    private RFCommBluetoothDevice bluetoothDevice;
+
     @FXML
     private ProgressBar progressBar;
-
     @FXML
     private Label lblStatus;
-
     @FXML
     private BorderPane mainPane;
 
     /**
      *
+     * @throws javax.bluetooth.BluetoothStateException
      */
-    public Main() {
+    public Main() throws BluetoothStateException {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("Main.fxml"));
         fxmlLoader.setRoot(this);
         fxmlLoader.setController(this);
@@ -50,10 +52,15 @@ public class Main extends BorderPane {
         } catch (IOException exception) {
             throw new RuntimeException(exception);
         }
+        scanBluetoothDevices();
     }
 
     @FXML
     void btnSettingsOnAction(ActionEvent event) throws BluetoothStateException {
+        scanBluetoothDevices();
+    }
+
+    private void scanBluetoothDevices() throws BluetoothStateException {
         // Prepare search thread
         BluetoothScanThread scanThread = new BluetoothScanThread(new BluetoothScanEventListener() {
             @Override
@@ -67,16 +74,35 @@ public class Main extends BorderPane {
 
             @Override
             public void scanFinished(ScanFinishedEvent evt) {
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        Optional<RFCommBluetoothDevice> result = new SelectBluetoothDeviceDialog(
-                                "Settings",
-                                "Settings",
-                                new Image(this.getClass().getResourceAsStream("/org/korecky/bluetooth/car/controller/images/icons_48x48/bluetooth.png")),
-                                evt.getFoundDevices()).showAndWait();
+                String deviceAddress = Configuration.getConfiguration().getBluetoothDeviceAddress();
+                if ((deviceAddress != null) && (deviceAddress.trim().length() > 0)) {
+                    if (evt.getFoundDevices() != null) {
+                        for (RFCommBluetoothDevice device : evt.getFoundDevices()) {
+                            if (deviceAddress.equalsIgnoreCase(device.getAddress())) {
+                                bluetoothDevice = device;
+                                break;
+                            }
+                        }
                     }
-                });
+                }
+
+                if (bluetoothDevice == null) {
+                    Platform.runLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            Optional<RFCommBluetoothDevice> result = new SelectBluetoothDeviceDialog(
+                                    "Settings",
+                                    "Settings",
+                                    new Image(this.getClass().getResourceAsStream("/org/korecky/bluetooth/car/controller/images/icons_48x48/bluetooth.png")),
+                                    evt.getFoundDevices()).showAndWait();
+                            if (result.isPresent()) {
+                                bluetoothDevice = result.get();
+                                Configuration.getConfiguration().setBluetoothDeviceAddress(bluetoothDevice.getAddress());
+                                Configuration.getConfiguration().save();
+                            }
+                        }
+                    });
+                }
 
 //                System.out.println("");
 //                System.out.println("Found RFComm decices");
