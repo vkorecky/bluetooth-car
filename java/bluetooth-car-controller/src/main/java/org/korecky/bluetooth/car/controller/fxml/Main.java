@@ -1,7 +1,10 @@
 package org.korecky.bluetooth.car.controller.fxml;
 
+import org.korecky.bluetooth.car.controller.fxml.radar.Radar;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import javafx.application.Platform;
@@ -17,6 +20,7 @@ import javafx.scene.layout.BorderPane;
 import javax.bluetooth.BluetoothStateException;
 import org.korecky.bluetooth.car.controller.Configuration;
 import org.korecky.bluetooth.car.controller.fxml.dialogs.SelectBluetoothDeviceDialog;
+import org.korecky.bluetooth.car.controller.fxml.radar.PointOfInterest;
 import org.korecky.bluetooth.client.hc06.BluetoothScanThread;
 import org.korecky.bluetooth.client.hc06.RFCommClientThread;
 import org.korecky.bluetooth.client.hc06.entity.RFCommBluetoothDevice;
@@ -40,7 +44,7 @@ public class Main extends BorderPane {
     @FXML
     private ProgressBar progressBar;
     @FXML
-    private Label lblStatus;   
+    private Label lblStatus;
 
     private Radar radar;
 
@@ -64,10 +68,10 @@ public class Main extends BorderPane {
         sceneProperty().addListener((observableScene, oldScene, newScene) -> {
             if (newScene != null) {
                 newScene.widthProperty().addListener(observable -> radar.redraw(newScene.getWidth(), newScene.getHeight() - 100));
-                newScene.heightProperty().addListener(observable -> radar.redraw(newScene.getWidth(), newScene.getHeight() -100));
+                newScene.heightProperty().addListener(observable -> radar.redraw(newScene.getWidth(), newScene.getHeight() - 100));
             }
-        });        
-        
+        });
+
         scanBluetoothDevices();
     }
 
@@ -132,13 +136,32 @@ public class Main extends BorderPane {
 
                             @Override
                             public void messageReceived(MessageReceivedEvent evt) {
-                                if (evt.getMessage() != null){
+                                LOGGER.debug(String.format("[%s] %s", new Date(), evt.getMessage()));
+                                if (evt.getMessage() != null) {
                                     String[] data = evt.getMessage().split("\\:");
-                                    if (data.length > 1){
-                                        radar.drawRadarSignal(Integer.parseInt(data[0].trim()));
+                                    if (data.length > 1) {
+                                        try {
+                                            double angel = Double.parseDouble(data[0].trim());
+                                            double distance = Double.parseDouble(data[1].trim());
+                                            radar.drawRadarSignal(angel);
+
+                                            if (distance >= 0) {
+                                                // Delete old pois in angel
+                                                List<PointOfInterest> pointsOfInterest = new ArrayList<>();
+                                                for (PointOfInterest pointOfInterest : radar.getPointsOfInterest()) {
+                                                    if (pointOfInterest.getAngel() != angel) {
+                                                        pointsOfInterest.add(pointOfInterest);
+                                                    }
+                                                }
+                                                pointsOfInterest.add(new PointOfInterest(angel, distance));
+                                                radar.setPointsOfInterest(pointsOfInterest);
+                                                radar.drawPointsOfInterest();
+                                            }
+                                        } catch (Throwable exc) {
+                                            LOGGER.error("Cannot parse data from car.", exc);
+                                        }
                                     }
                                 }
-                                LOGGER.debug(String.format("[%s] %s", new Date(), evt.getMessage()));
                             }
                         });
                         commThread.start();

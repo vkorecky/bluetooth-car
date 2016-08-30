@@ -39,9 +39,10 @@ void setup() {
 // -----
 void loop() {
   
+  String message = String(_servoAngel) + ":" + String(-1);  
+  bluetooth.send(message);
   long distance = ultrasonic.measure(_servoAngel); 
-  String message = String(_servoAngel) + " : " + String(distance);  
-  //Serial.println(message);
+  message = String(_servoAngel) + ":" + String(distance);  
   bluetooth.send(message);
 
   if ((_servoDirection == 1) && ((_servoAngel + _servoAngelStep) > 180)) {

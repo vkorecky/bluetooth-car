@@ -30,7 +30,7 @@ long Ultrasonic::measure(int servoAngel)
   long duration, distance;
 
   myservo.write(servoAngel);
-  delay(250);
+  delay(500);
 
   digitalWrite(_trig, LOW);  // Added this line
   delayMicroseconds(2); // Added this line
@@ -40,8 +40,8 @@ long Ultrasonic::measure(int servoAngel)
   duration = pulseIn(_echo, HIGH);
 
   distance = (duration / 2) / 29.1;
-  if (distance >= 200 || distance <= 0) {
-    return -1;
+  if (distance <= 0) {
+    return 0;
   }
   return distance;
 }
