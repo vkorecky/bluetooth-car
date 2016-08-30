@@ -13,7 +13,6 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.paint.Color?>
 <?scenebuilder-classpath-element ../../../../../../../target/bluetooth-car-controller.jar?>
 
@@ -36,16 +35,6 @@
       </BorderPane.margin>
     </FlowPane>
   </bottom>
-  <center>
-    <BorderPane fx:id="mainPane" prefHeight="200.0" prefWidth="200.0" />
-  </center>
-  <left>
-    <VBox prefHeight="411.0" prefWidth="261.0" styleClass="pnMenu">
-      <padding>
-        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-      </padding>
-    </VBox>
-  </left>
   <stylesheets>
     <URL value="@../css/theme.css" />
   </stylesheets>

@@ -1,7 +1,9 @@
 package org.korecky.bluetooth.car.controller.fxml;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Optional;
+import java.util.logging.Level;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -16,11 +18,14 @@ import javax.bluetooth.BluetoothStateException;
 import org.korecky.bluetooth.car.controller.Configuration;
 import org.korecky.bluetooth.car.controller.fxml.dialogs.SelectBluetoothDeviceDialog;
 import org.korecky.bluetooth.client.hc06.BluetoothScanThread;
+import org.korecky.bluetooth.client.hc06.RFCommClientThread;
 import org.korecky.bluetooth.client.hc06.entity.RFCommBluetoothDevice;
 import org.korecky.bluetooth.client.hc06.event.ErrorEvent;
+import org.korecky.bluetooth.client.hc06.event.MessageReceivedEvent;
 import org.korecky.bluetooth.client.hc06.event.ProgressUpdatedEvent;
 import org.korecky.bluetooth.client.hc06.event.ScanFinishedEvent;
 import org.korecky.bluetooth.client.hc06.listener.BluetoothScanEventListener;
+import org.korecky.bluetooth.client.hc06.listener.RFCommClientEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,14 +35,14 @@ import org.slf4j.LoggerFactory;
 public class Main extends BorderPane {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
-    private RFCommBluetoothDevice bluetoothDevice;
+    private RFCommBluetoothDevice selectedDevice;
 
     @FXML
     private ProgressBar progressBar;
     @FXML
-    private Label lblStatus;
-    @FXML
-    private BorderPane mainPane;
+    private Label lblStatus;   
+
+    private Radar radar;
 
     /**
      *
@@ -52,6 +57,17 @@ public class Main extends BorderPane {
         } catch (IOException exception) {
             throw new RuntimeException(exception);
         }
+
+        radar = new Radar(45);
+        setCenter(radar);
+
+        sceneProperty().addListener((observableScene, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.widthProperty().addListener(observable -> radar.redraw(newScene.getWidth(), newScene.getHeight() - 100));
+                newScene.heightProperty().addListener(observable -> radar.redraw(newScene.getWidth(), newScene.getHeight() -100));
+            }
+        });        
+        
         scanBluetoothDevices();
     }
 
@@ -79,14 +95,14 @@ public class Main extends BorderPane {
                     if (evt.getFoundDevices() != null) {
                         for (RFCommBluetoothDevice device : evt.getFoundDevices()) {
                             if (deviceAddress.equalsIgnoreCase(device.getAddress())) {
-                                bluetoothDevice = device;
+                                selectedDevice = device;
                                 break;
                             }
                         }
                     }
                 }
 
-                if (bluetoothDevice == null) {
+                if (selectedDevice == null) {
                     Platform.runLater(new Runnable() {
                         @Override
                         public void run() {
@@ -96,46 +112,37 @@ public class Main extends BorderPane {
                                     new Image(this.getClass().getResourceAsStream("/org/korecky/bluetooth/car/controller/images/icons_48x48/bluetooth.png")),
                                     evt.getFoundDevices()).showAndWait();
                             if (result.isPresent()) {
-                                bluetoothDevice = result.get();
-                                Configuration.getConfiguration().setBluetoothDeviceAddress(bluetoothDevice.getAddress());
+                                selectedDevice = result.get();
+                                Configuration.getConfiguration().setBluetoothDeviceAddress(selectedDevice.getAddress());
                                 Configuration.getConfiguration().save();
                             }
                         }
                     });
                 }
 
-//                System.out.println("");
-//                System.out.println("Found RFComm decices");
-//                int i = 1;
-//                for (RFCommBluetoothDevice device : evt.getFoundDevices()) {
-//                    System.out.println(String.format("%d:", i));
-//                    System.out.println(String.format("   Address: %s", device.getAddress()));
-//                    System.out.println(String.format("   Name: %s", device.getName()));
-//                    System.out.println(String.format("   URL: %s", device.getUrl()));
-//                    i++;
-//                }
-//                System.out.println();
-//                System.out.print("Device number for communication:");
-//                Scanner in = new Scanner(System.in);
-//                int selected = in.nextInt();
-//
-//                if ((selected > 0) && (selected <= evt.getFoundDevices().size())) {
-//                    try {
-//                        // Listen bluetooth device
-//                        RFCommBluetoothDevice selectedDevice = evt.getFoundDevices().get(selected - 1);
-//                        RFCommClientThread commThread = new RFCommClientThread(selectedDevice.getUrl(), '\n', new RFCommClientEventListener() {
-//                            @Override
-//                            public void error(ErrorEvent evt) {
-//                                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//                            }
-//
-//                            @Override
-//                            public void messageReceived(MessageReceivedEvent evt) {
-//                                System.out.println(String.format("[%s] %s", new Date(), evt.getMessage()));
-//                            }
-//                        });
-//                        commThread.start();
-//
+                if (selectedDevice != null) {
+
+                    try {
+                        // Listen bluetooth device
+                        RFCommClientThread commThread = new RFCommClientThread(selectedDevice.getUrl(), '\n', new RFCommClientEventListener() {
+                            @Override
+                            public void error(ErrorEvent evt) {
+                                LOGGER.error("Communication error", evt.getError());
+                            }
+
+                            @Override
+                            public void messageReceived(MessageReceivedEvent evt) {
+                                if (evt.getMessage() != null){
+                                    String[] data = evt.getMessage().split("\\:");
+                                    if (data.length > 1){
+                                        radar.drawRadarSignal(Integer.parseInt(data[0].trim()));
+                                    }
+                                }
+                                LOGGER.debug(String.format("[%s] %s", new Date(), evt.getMessage()));
+                            }
+                        });
+                        commThread.start();
+//                        
 //                        // Send message to Arduino
 //                        System.out.print("What's your name? :");
 //                        in = new Scanner(System.in);
@@ -146,13 +153,10 @@ public class Main extends BorderPane {
 //                        } catch (InterruptedException ex) {
 //                            logger.error("Cannot sleep main thread.");
 //                        }
-//                        System.exit(0);
-//                    } catch (IOException ex) {
-//                        logger.error("Cannot connect to device.", ex);
-//                    }
-//                } else {
-//                    System.out.print("Invalid selection.");
-//                }
+                    } catch (IOException ex) {
+                        java.util.logging.Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
             }
 
             @Override
