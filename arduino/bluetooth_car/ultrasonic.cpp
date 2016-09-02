@@ -30,7 +30,7 @@ long Ultrasonic::measure(int servoAngel)
   long duration, distance;
 
   myservo.write(servoAngel);
-  delay(500);
+  delay(330);
 
   digitalWrite(_trig, LOW);  // Added this line
   delayMicroseconds(2); // Added this line

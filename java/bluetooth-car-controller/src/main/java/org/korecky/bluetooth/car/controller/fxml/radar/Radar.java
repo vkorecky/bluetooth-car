@@ -26,7 +26,7 @@ public class Radar extends StackPane {
     private Canvas signalCanvas;
     private Canvas poisCanvas;
     private double currentRadarAngel = 0;
-    private double signalAngelSize = 45;
+    private double signalAngelSize = 90;
     private double canvasWidth = 0;
     private double canvasHeight = 0;
     private List<PointOfInterest> pointsOfInterest = new ArrayList<>();
@@ -120,19 +120,16 @@ public class Radar extends StackPane {
         // Delete canvas
         gc.clearRect(0, 0, canvasWidth, canvasHeight);
         for (PointOfInterest pointOfInterest : pointsOfInterest) {
-            Point2D poi2D = claculateXYPoints(pointOfInterest.getDistance() * 10, pointOfInterest.getAngel(), canvasWidth / 2, canvasHeight);
+            Point2D poi2D = claculateXYPoints(pointOfInterest.getDistance() * zoom, pointOfInterest.getAngel(), canvasWidth / 2, canvasHeight);
             double x = poi2D.getX();
             double y = poi2D.getY();
-            // Set colors
-            RadialGradient radialGradient = new RadialGradient(0, 0.1, x, y, poiSize, false,
-                    CycleMethod.NO_CYCLE,
-                    new Stop(0.0, Color.web("#dd4814")),
-                    new Stop(1.0, Color.TRANSPARENT));
-            gc.setFill(radialGradient);
-            
+            // Set colors            
+            gc.setFill(Color.web("#dd4814"));
+
             x = x + (poiSize / 2);
             y = y + (poiSize / 2);
-            gc.fillOval(x, y, poiSize, poiSize);
+            System.out.println(String.format("POI %s:%s, %s:%s", String.valueOf(pointOfInterest.getAngel()), String.valueOf(pointOfInterest.getDistance()), String.valueOf(x), String.valueOf(y)));
+            gc.fillOval(x, y, poiSize, poiSize);            
         }
     }
 

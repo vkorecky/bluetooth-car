@@ -82,7 +82,67 @@ public class Main extends BorderPane {
 
     private void scanBluetoothDevices() throws BluetoothStateException {
         // Prepare search thread
-        BluetoothScanThread scanThread = new BluetoothScanThread(new BluetoothScanEventListener() {
+        BluetoothScanThread scanThread = new BluetoothScanThread(getBluetoothScanEventListener());
+
+        // Start search of bluetooth device
+        scanThread.start();
+
+        String deviceAddress = Configuration.getConfiguration().getBluetoothDeviceAddress();
+        if ((deviceAddress != null) && (deviceAddress.trim().length() > 0)) {
+            scanThread.findDevice(deviceAddress);
+        } else {
+            scanThread.scanDevices();
+        }
+    }
+
+    private RFCommClientEventListener getRFCommClientEventListener() {
+        return new RFCommClientEventListener() {
+            @Override
+            public void error(ErrorEvent evt) {
+                LOGGER.error("Communication error", evt.getError());
+            }
+
+            @Override
+            public void messageReceived(MessageReceivedEvent evt) {
+                LOGGER.debug(String.format("[%s] %s", new Date(), evt.getMessage()));
+                if (evt.getMessage() != null) {
+                    String[] messages = evt.getMessage().split("\\r");
+                    if ((messages != null) && (messages.length > 0)) {
+                        for (String message : messages) {
+                            String[] data = message.split("\\:");
+                            if (data.length > 1) {
+                                try {
+                                    double angel = Double.parseDouble(data[0].trim());
+                                    double distance = Double.parseDouble(data[1].trim());
+
+                                    if (distance > -1) {
+                                        radar.drawRadarSignal(angel);
+                                        if (distance >= 0) {
+                                            // Delete old pois in angel
+                                            List<PointOfInterest> pointsOfInterest = new ArrayList<>();
+                                            for (PointOfInterest pointOfInterest : radar.getPointsOfInterest()) {
+                                                if (pointOfInterest.getAngel() != angel) {
+                                                    pointsOfInterest.add(pointOfInterest);
+                                                }
+                                            }
+                                            pointsOfInterest.add(new PointOfInterest(angel, distance));
+                                            radar.setPointsOfInterest(pointsOfInterest);
+                                            radar.drawPointsOfInterest();
+                                        }
+                                    }
+                                } catch (Throwable exc) {
+                                    LOGGER.error("Cannot parse data from car.", exc);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    private BluetoothScanEventListener getBluetoothScanEventListener() {
+        return new BluetoothScanEventListener() {
             @Override
             public void error(ErrorEvent evt) {
                 Alert alert = new Alert(AlertType.ERROR);
@@ -128,54 +188,11 @@ public class Main extends BorderPane {
 
                     try {
                         // Listen bluetooth device
-                        RFCommClientThread commThread = new RFCommClientThread(selectedDevice.getUrl(), '\n', new RFCommClientEventListener() {
-                            @Override
-                            public void error(ErrorEvent evt) {
-                                LOGGER.error("Communication error", evt.getError());
-                            }
-
-                            @Override
-                            public void messageReceived(MessageReceivedEvent evt) {
-                                LOGGER.debug(String.format("[%s] %s", new Date(), evt.getMessage()));
-                                if (evt.getMessage() != null) {
-                                    String[] data = evt.getMessage().split("\\:");
-                                    if (data.length > 1) {
-                                        try {
-                                            double angel = Double.parseDouble(data[0].trim());
-                                            double distance = Double.parseDouble(data[1].trim());
-                                            radar.drawRadarSignal(angel);
-
-                                            if (distance >= 0) {
-                                                // Delete old pois in angel
-                                                List<PointOfInterest> pointsOfInterest = new ArrayList<>();
-                                                for (PointOfInterest pointOfInterest : radar.getPointsOfInterest()) {
-                                                    if (pointOfInterest.getAngel() != angel) {
-                                                        pointsOfInterest.add(pointOfInterest);
-                                                    }
-                                                }
-                                                pointsOfInterest.add(new PointOfInterest(angel, distance));
-                                                radar.setPointsOfInterest(pointsOfInterest);
-                                                radar.drawPointsOfInterest();
-                                            }
-                                        } catch (Throwable exc) {
-                                            LOGGER.error("Cannot parse data from car.", exc);
-                                        }
-                                    }
-                                }
-                            }
-                        });
+                        RFCommClientThread commThread = new RFCommClientThread(selectedDevice.getUrl(), '\n', new char[]{'\n', '\r'}, getRFCommClientEventListener());
                         commThread.start();
-//                        
-//                        // Send message to Arduino
-//                        System.out.print("What's your name? :");
-//                        in = new Scanner(System.in);
-//                        String name = in.nextLine();
-//                        commThread.send(name);
-//                        try {
-//                            Thread.sleep(2000);
-//                        } catch (InterruptedException ex) {
-//                            logger.error("Cannot sleep main thread.");
-//                        }
+                        
+//                        // Send message to Arduino                        
+//                        commThread.send("forward");                        
                     } catch (IOException ex) {
                         java.util.logging.Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -195,9 +212,6 @@ public class Main extends BorderPane {
                     }
                 });
             }
-        });
-
-        // Start search of bluetooth device
-        scanThread.start();
+        };
     }
 }
